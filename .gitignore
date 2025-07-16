@@ -1,0 +1,69 @@
+# Dependencies
+/vendor/
+/node_modules/
+composer.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Cache
+/cache/
+/tmp/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+/coverage/
+/coverage-html/
+.phpunit.result.cache
+.phpunit.cache/
+phpunit.xml.bak
+coverage.xml
+coverage.txt
+junit.xml
+
+# Build artifacts
+/build/
+/dist/
+/rust/target/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation build
+/docs/build/
+
+# Windows Zone.Identifier files
+*:Zone.Identifier
+*.Zone.Identifier
+
+# PHP CS Fixer
+.php_cs.cache
+.php-cs-fixer.cache
+
+# PHPStan
+.phpstan.cache
+
+# Psalm
+.psalm.cache
+
+# Generated protobuf files (if auto-generated)
+/src/Generated/
+
+# Runtime files
+*.pid
+*.sock
