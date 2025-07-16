@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace HighPerApp\HighPer\GRPC\Protocol;
 
-use HighPerApp\HighPer\GRPC\Engines\HybridEngine;
+use HighPerApp\HighPer\GRPC\Contracts\EngineInterface;
 use HighPerApp\HighPer\GRPC\Serialization\ProtobufSerializer;
 use HighPerApp\HighPer\GRPC\Exceptions\GrpcException;
 use Psr\Log\LoggerInterface;
@@ -22,14 +22,14 @@ use Psr\Log\NullLogger;
  */
 class GrpcProtocolHandler
 {
-    private HybridEngine $engine;
+    private EngineInterface $engine;
     private ProtobufSerializer $serializer;
     private LoggerInterface $logger;
     private array $config;
     private array $supportedCompressions = ['gzip', 'deflate'];
     
     public function __construct(
-        HybridEngine $engine,
+        EngineInterface $engine,
         array $config = [],
         ?LoggerInterface $logger = null
     ) {

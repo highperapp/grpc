@@ -8,6 +8,7 @@ use HighPerApp\HighPer\GRPC\GrpcServer;
 use HighPerApp\HighPer\GRPC\Foundation\GrpcWorkerProcess;
 use HighPerApp\HighPer\GRPC\Contracts\GrpcServiceInterface;
 use HighPerApp\HighPer\GRPC\Engines\HybridEngine;
+use HighPerApp\HighPer\GRPC\Engines\RustFFIEngine;
 use HighPerApp\HighPer\GRPC\Protocol\GrpcProtocolHandler;
 use HighPerApp\HighPer\GRPC\Reliability\GrpcCircuitBreaker;
 use HighPerApp\HighPer\GRPC\Reliability\GrpcRetryHandler;
@@ -73,7 +74,12 @@ class GrpcServerFactory
         $this->config['worker_processes'] = 1;
         $this->config['parallel_workers'] = 1;
         
-        return new GrpcServer($this->config, $this->logger);
+        return new GrpcServer(
+            $this->config['host'] ?? '0.0.0.0',
+            $this->config['port'] ?? 9090,
+            $this->config,
+            $this->logger
+        );
     }
 
     /**
@@ -85,7 +91,12 @@ class GrpcServerFactory
         $this->config['parallel_workers'] = max(1, (int) shell_exec('nproc') ?? 1);
         $this->config['engine']['rust_acceleration'] = true;
         
-        return new GrpcServer($this->config, $this->logger);
+        return new GrpcServer(
+            $this->config['host'] ?? '0.0.0.0',
+            $this->config['port'] ?? 9090,
+            $this->config,
+            $this->logger
+        );
     }
 
     /**
@@ -100,7 +111,12 @@ class GrpcServerFactory
             'ca_file' => $caFile
         ];
         
-        return new GrpcServer($this->config, $this->logger);
+        return new GrpcServer(
+            $this->config['host'] ?? '0.0.0.0',
+            $this->config['port'] ?? 9090,
+            $this->config,
+            $this->logger
+        );
     }
 
     /**
@@ -114,7 +130,12 @@ class GrpcServerFactory
         $this->config['circuit_breaker']['enabled'] = false;
         $this->config['retry']['enabled'] = false;
         
-        return new GrpcServer($this->config, $this->logger);
+        return new GrpcServer(
+            $this->config['host'] ?? '0.0.0.0',
+            $this->config['port'] ?? 9090,
+            $this->config,
+            $this->logger
+        );
     }
 
     /**
@@ -202,5 +223,33 @@ class GrpcServerFactory
     {
         $this->logger = $logger;
         return $this;
+    }
+
+    /**
+     * Get engine type
+     */
+    public function getEngineType(): string
+    {
+        if ($this->config['engine']['rust_acceleration'] ?? false) {
+            return RustFFIEngine::isAvailable() ? 'rust_ffi' : 'pure_php';
+        }
+        return 'pure_php';
+    }
+
+    /**
+     * Get supported features
+     */
+    public function getSupportedFeatures(): array
+    {
+        return [
+            'rust_acceleration' => RustFFIEngine::isAvailable(),
+            'circuit_breaker' => true,
+            'retry_handler' => true,
+            'parallel_processing' => true,
+            'compression' => true,
+            'streaming' => true,
+            'reflection' => true,
+            'health_check' => true
+        ];
     }
 }

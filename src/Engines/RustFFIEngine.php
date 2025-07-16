@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace HighPerApp\HighPer\GRPC\Engines;
 
+use HighPerApp\HighPer\GRPC\Contracts\EngineInterface;
 use HighPerApp\HighPer\GRPC\Exceptions\GrpcException;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -17,7 +18,7 @@ use FFI;
  * 
  * Integrates with HighPer framework's performance optimization patterns.
  */
-class RustFFIEngine
+class RustFFIEngine implements EngineInterface
 {
     private FFI $ffi;
     private LoggerInterface $logger;
@@ -627,6 +628,22 @@ class RustFFIEngine
         } catch (\Throwable $e) {
             return $e->getMessage();
         }
+    }
+
+    /**
+     * Check if Rust FFI is available
+     */
+    public static function isAvailable(): bool
+    {
+        return extension_loaded('ffi') && class_exists('FFI');
+    }
+
+    /**
+     * Get supported compression algorithms
+     */
+    public function getSupportedCompressions(): array
+    {
+        return ['gzip', 'deflate', 'snappy'];
     }
 
     /**

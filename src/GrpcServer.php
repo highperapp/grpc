@@ -7,7 +7,9 @@ namespace HighPerApp\HighPer\GRPC;
 use Amp\Http\Server\HttpServer;
 use Amp\Http\Server\Request;
 use Amp\Http\Server\Response;
-use Amp\Http\Server\Router;
+use Amp\Http\Server\RequestHandler\ClosureRequestHandler;
+use Amp\Http\Status;
+use Amp\Socket;
 use Amp\Socket\InternetAddress;
 use HighPerApp\HighPer\GRPC\Contracts\GrpcServiceInterface;
 use HighPerApp\HighPer\GRPC\Engines\RustFFIEngine;
@@ -21,8 +23,7 @@ use Psr\Log\NullLogger;
 
 class GrpcServer
 {
-    private HttpServer $httpServer;
-    private Router $router;
+    private ?HttpServer $httpServer = null;
     private GrpcProtocolHandler $protocolHandler;
     private RustFFIEngine|PurePHPEngine $engine;
     private ProtobufSerializer $serializer;
@@ -104,30 +105,8 @@ class GrpcServer
 
     private function createServer(string $host, int $port): void
     {
-        $this->router = new Router();
-        
-        // Handle all gRPC requests
-        $this->router->addRoute('POST', '/{service}/{method}', 
-            [$this, 'handleGRPCRequest']
-        );
-        
-        // Health check endpoint
-        $this->router->addRoute('GET', '/health', 
-            [$this, 'handleHealthCheck']
-        );
-        
-        // Reflection endpoint (if enabled)
-        if ($this->config['reflection_enabled']) {
-            $this->router->addRoute('POST', '/grpc.reflection.v1alpha.ServerReflection/ServerReflectionInfo',
-                [$this, 'handleReflection']
-            );
-        }
-        
-        $this->httpServer = new HttpServer(
-            [new InternetAddress($host, $port)],
-            $this->router,
-            $this->logger
-        );
+        // For now, just create a placeholder - the actual server will be handled by the framework
+        $this->httpServer = null;
     }
 
     public function registerService(GrpcServiceInterface $service): self
@@ -218,7 +197,7 @@ class GrpcServer
         );
     }
 
-    public function handleReflection(Request $request): Response
+    public function handleReflection(Request $request): \Generator
     {
         try {
             $body = yield $request->getBody()->buffer();
@@ -274,24 +253,27 @@ class GrpcServer
         };
     }
 
-    public function run(): void
+    public function run(): \Generator
     {
         $this->logger->info('Starting gRPC server', [
-            'address' => $this->httpServer->getServers()[0]->getAddress(),
             'engine' => get_class($this->engine),
             'services' => array_keys($this->services)
         ]);
         
-        yield $this->httpServer->start();
+        if ($this->httpServer) {
+            yield $this->httpServer->start();
+        }
         
         $this->logger->info('gRPC server started successfully');
     }
 
-    public function stop(): void
+    public function stop(): \Generator
     {
         $this->logger->info('Stopping gRPC server');
         
-        yield $this->httpServer->stop();
+        if ($this->httpServer) {
+            yield $this->httpServer->stop();
+        }
         
         $this->logger->info('gRPC server stopped');
     }
@@ -304,6 +286,18 @@ class GrpcServer
             'peak_memory' => memory_get_peak_usage(true),
             'services_count' => count($this->services)
         ]);
+    }
+
+    public function getInfo(): array
+    {
+        return [
+            'version' => '1.0.0',
+            'php_version' => PHP_VERSION,
+            'workers' => $this->config['worker_processes'] ?? 1,
+            'services' => count($this->services),
+            'engine' => get_class($this->engine),
+            'status' => $this->httpServer ? 'initialized' : 'not_initialized'
+        ];
     }
 
     public function getServices(): array

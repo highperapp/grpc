@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace HighPerApp\HighPer\GRPC\Engines;
 
+use HighPerApp\HighPer\GRPC\Contracts\EngineInterface;
 use HighPerApp\HighPer\GRPC\Engines\RustFFIEngine;
 use HighPerApp\HighPer\GRPC\Engines\PurePHPEngine;
 use HighPerApp\HighPer\GRPC\Exceptions\GrpcException;
@@ -18,7 +19,7 @@ use Psr\Log\NullLogger;
  * 
  * Integrates with HighPer framework's performance optimization patterns.
  */
-class HybridEngine
+class HybridEngine implements EngineInterface
 {
     private RustFFIEngine|PurePHPEngine $activeEngine;
     private LoggerInterface $logger;
@@ -388,5 +389,13 @@ class HybridEngine
         if (method_exists($this->activeEngine, 'cleanup')) {
             $this->activeEngine->cleanup();
         }
+    }
+
+    /**
+     * Get supported compression algorithms
+     */
+    public function getSupportedCompressions(): array
+    {
+        return $this->activeEngine->getSupportedCompressions();
     }
 }

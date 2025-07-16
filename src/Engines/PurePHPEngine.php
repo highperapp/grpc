@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace HighPerApp\HighPer\GRPC\Engines;
 
+use HighPerApp\HighPer\GRPC\Contracts\EngineInterface;
 use HighPerApp\HighPer\GRPC\Exceptions\GrpcException;
 use Google\Protobuf\Internal\Message;
 use Psr\Log\LoggerInterface;
@@ -15,7 +16,7 @@ use Psr\Log\NullLogger;
  * Fallback engine that provides full gRPC functionality using pure PHP
  * without external dependencies. Optimized for reliability and compatibility.
  */
-class PurePHPEngine
+class PurePHPEngine implements EngineInterface
 {
     private LoggerInterface $logger;
     private array $config;
@@ -497,5 +498,13 @@ class PurePHPEngine
                 ($this->stats['cache_hits'] / ($this->stats['cache_hits'] + $this->stats['cache_misses'])) * 100 : 0,
             'config' => $this->config
         ]);
+    }
+
+    /**
+     * Get supported compression algorithms
+     */
+    public function getSupportedCompressions(): array
+    {
+        return ['gzip', 'deflate'];
     }
 }
