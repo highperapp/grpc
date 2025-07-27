@@ -38,50 +38,56 @@ class GrpcServiceProvider
     public function register(): void
     {
         // Register factory
-        $this->container->set(GrpcServerFactory::class, function () {
-            return new GrpcServerFactory(
-                $this->config,
-                $this->container->has(LoggerInterface::class) 
-                    ? $this->container->get(LoggerInterface::class) 
-                    : null
-            );
+        $this->container->singleton(GrpcServerFactory::class, function () {
+            $logger = null;
+            try {
+                if ($this->container->has(LoggerInterface::class)) {
+                    $logger = $this->container->get(LoggerInterface::class);
+                }
+            } catch (\Exception $e) {
+                $logger = null;
+            }
+            return new GrpcServerFactory($this->config, $logger);
         });
 
         // Register server
-        $this->container->set(GrpcServer::class, function () {
+        $this->container->singleton(GrpcServer::class, function () {
             return $this->container->get(GrpcServerFactory::class)->createHighPerformanceServer();
         });
 
         // Register engine
-        $this->container->set(HybridEngine::class, function () {
+        $this->container->singleton(HybridEngine::class, function () {
             return $this->container->get(GrpcServerFactory::class)->createEngine();
         });
 
         // Register protocol handler
-        $this->container->set(GrpcProtocolHandler::class, function () {
+        $this->container->singleton(GrpcProtocolHandler::class, function () {
             return $this->container->get(GrpcServerFactory::class)->createProtocolHandler(
                 $this->container->get(HybridEngine::class)
             );
         });
 
         // Register circuit breaker
-        $this->container->set(GrpcCircuitBreaker::class, function () {
+        $this->container->factory(GrpcCircuitBreaker::class, function () {
             return $this->container->get(GrpcServerFactory::class)->createCircuitBreaker();
         });
 
         // Register retry handler
-        $this->container->set(GrpcRetryHandler::class, function () {
+        $this->container->factory(GrpcRetryHandler::class, function () {
             return $this->container->get(GrpcServerFactory::class)->createRetryHandler();
         });
 
         // Register serializer
-        $this->container->set(ProtobufSerializer::class, function () {
-            return new ProtobufSerializer(
-                $this->config['serialization'] ?? [],
-                $this->container->has(LoggerInterface::class) 
-                    ? $this->container->get(LoggerInterface::class) 
-                    : null
-            );
+        $this->container->singleton(ProtobufSerializer::class, function () {
+            $logger = null;
+            try {
+                if ($this->container->has(LoggerInterface::class)) {
+                    $logger = $this->container->get(LoggerInterface::class);
+                }
+            } catch (\Exception $e) {
+                $logger = null;
+            }
+            return new ProtobufSerializer($this->config['serialization'] ?? [], $logger);
         });
     }
 
